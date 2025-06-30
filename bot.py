@@ -15,6 +15,7 @@ TOKEN_LOG_FILE = "token_usage.txt"
 OPENAI_KEY_FILE = "openai_key.txt"
 DISCORD_TOKEN_FILE = "discord_token.txt"
 
+
 OWNER_ID = 1265368042146238536
 BOT_VERSION = "v1"
 
@@ -86,6 +87,9 @@ def get_discord_token() -> str | None:
 async def chat_gpt(model_alias: str, prompt: str):
     openai.api_key = get_openai_key()
     model = API_MODEL_MAP.get(model_alias, model_alias)
+=======
+async def chat_gpt(model: str, prompt: str):
+    openai.api_key = get_openai_key()
     response = openai.ChatCompletion.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
@@ -137,6 +141,7 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name="Whitelisted seit", value=WHITELIST.get(user.id, "?"), inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
 MODELS = [
     "gpt-4",
     "4o",
@@ -162,6 +167,9 @@ API_MODEL_MAP = {
     "o3-mini-high": "gpt-3.5-turbo",
     "o3-pro": "gpt-4-turbo",
 }
+=======
+MODELS = ["gpt-3.5-turbo", "gpt-4", "o1-pro", "o3-pro"]
+
 
 @bot.tree.command(name="gpt", description="ChatGPT prompt")
 @app_commands.describe(prompt="Prompt", web_search="Enable web search")
@@ -219,4 +227,7 @@ token = get_discord_token()
 if not token:
     raise RuntimeError("Discord token not provided")
 bot.run(token)
+=======
+bot.run(os.getenv("DISCORD_TOKEN"))
+
 
