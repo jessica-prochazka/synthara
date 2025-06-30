@@ -13,6 +13,8 @@ logger = logging.getLogger("discord_bot")
 
 TOKEN_LOG_FILE = "token_usage.txt"
 OPENAI_KEY_FILE = "openai_key.txt"
+DISCORD_TOKEN_FILE = "discord_token.txt"
+
 
 OWNER_ID = 1265368042146238536
 BOT_VERSION = "v1"
@@ -72,6 +74,20 @@ def get_openai_key() -> str | None:
     except FileNotFoundError:
         return None
 
+def get_discord_token() -> str | None:
+    token = os.getenv("DISCORD_TOKEN")
+    if token:
+        return token
+    try:
+        with open(DISCORD_TOKEN_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+
+async def chat_gpt(model_alias: str, prompt: str):
+    openai.api_key = get_openai_key()
+    model = API_MODEL_MAP.get(model_alias, model_alias)
+=======
 async def chat_gpt(model: str, prompt: str):
     openai.api_key = get_openai_key()
     response = openai.ChatCompletion.create(
@@ -125,7 +141,35 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name="Whitelisted seit", value=WHITELIST.get(user.id, "?"), inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
+MODELS = [
+    "gpt-4",
+    "4o",
+    "4.1",
+    "4.1-mini",
+    "o1",
+    "o1-pro",
+    "o3",
+    "o3-mini",
+    "o3-mini-high",
+    "o3-pro",
+]
+
+API_MODEL_MAP = {
+    "gpt-4": "gpt-4",
+    "4o": "gpt-4o",
+    "4.1": "gpt-4-turbo",
+    "4.1-mini": "gpt-4-turbo",
+    "o1": "gpt-3.5-turbo",
+    "o1-pro": "gpt-4-turbo",
+    "o3": "gpt-3.5-turbo",
+    "o3-mini": "gpt-3.5-turbo",
+    "o3-mini-high": "gpt-3.5-turbo",
+    "o3-pro": "gpt-4-turbo",
+}
+=======
 MODELS = ["gpt-3.5-turbo", "gpt-4", "o1-pro", "o3-pro"]
+
 
 @bot.tree.command(name="gpt", description="ChatGPT prompt")
 @app_commands.describe(prompt="Prompt", web_search="Enable web search")
@@ -179,5 +223,11 @@ async def user_panel(interaction: discord.Interaction, action: str, user: discor
     else:
         await interaction.response.send_message("Unknown action", ephemeral=True)
 
+token = get_discord_token()
+if not token:
+    raise RuntimeError("Discord token not provided")
+bot.run(token)
+=======
 bot.run(os.getenv("DISCORD_TOKEN"))
+
 
