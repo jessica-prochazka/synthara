@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from datetime import datetime, date
 
@@ -14,7 +15,9 @@ logger = logging.getLogger("discord_bot")
 TOKEN_LOG_FILE = "token_usage.txt"
 OPENAI_KEY_FILE = "openai_key.txt"
 DISCORD_TOKEN_FILE = "discord_token.txt"
-
+WHITELIST_FILE = "whitelist.json"
+BLACKLIST_FILE = "blacklist.json"
+PRO_USERS_FILE = "pro_users.json"
 
 OWNER_ID = 1265368042146238536
 BOT_VERSION = "v1"
@@ -22,6 +25,34 @@ BOT_VERSION = "v1"
 WHITELIST: dict[int, str] = {}
 PRO_USERS: set[int] = set()
 BLACKLIST: set[int] = set()
+
+def load_json(path: str, default):
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return default
+    return default
+
+def save_json(path: str, data) -> None:
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+    except OSError:
+        pass
+
+def load_state() -> None:
+    global WHITELIST, PRO_USERS, BLACKLIST
+    WHITELIST = load_json(WHITELIST_FILE, {})
+    PRO_USERS = set(load_json(PRO_USERS_FILE, []))
+    BLACKLIST = set(load_json(BLACKLIST_FILE, []))
+    WHITELIST.setdefault(OWNER_ID, datetime.utcnow().date().isoformat())
+
+def save_state() -> None:
+    save_json(WHITELIST_FILE, WHITELIST)
+    save_json(PRO_USERS_FILE, list(PRO_USERS))
+    save_json(BLACKLIST_FILE, list(BLACKLIST))
 
 class GPTBot(commands.Bot):
     def __init__(self):
@@ -32,6 +63,9 @@ class GPTBot(commands.Bot):
     async def setup_hook(self):
         await self.tree.sync()
         WHITELIST.setdefault(OWNER_ID, datetime.utcnow().date().isoformat())
+        save_state()
+
+load_state()
 
 bot = GPTBot()
 
@@ -87,7 +121,6 @@ def get_discord_token() -> str | None:
 async def chat_gpt(model_alias: str, prompt: str):
     openai.api_key = get_openai_key()
     model = API_MODEL_MAP.get(model_alias, model_alias)
-=======
 async def chat_gpt(model: str, prompt: str):
     openai.api_key = get_openai_key()
     response = openai.ChatCompletion.create(
@@ -141,7 +174,6 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name="Whitelisted seit", value=WHITELIST.get(user.id, "?"), inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-
 MODELS = [
     "gpt-4",
     "4o",
@@ -167,7 +199,6 @@ API_MODEL_MAP = {
     "o3-mini-high": "gpt-3.5-turbo",
     "o3-pro": "gpt-4-turbo",
 }
-=======
 MODELS = ["gpt-3.5-turbo", "gpt-4", "o1-pro", "o3-pro"]
 
 
@@ -209,10 +240,16 @@ async def gpt(
 async def user_panel(interaction: discord.Interaction, action: str, user: discord.User):
     if action == "whitelist":
         WHITELIST[user.id] = datetime.utcnow().date().isoformat()
+        save_state()
         await interaction.response.send_message(f"{user} whitelisted")
     elif action == "blacklist":
         BLACKLIST.add(user.id)
         WHITELIST.pop(user.id, None)
+        save_state()
+        await interaction.response.send_message(f"{user} blacklisted")
+    elif action == "set-pro":
+        PRO_USERS.add(user.id)
+        save_state()
         await interaction.response.send_message(f"{user} blacklisted")
     elif action == "set-pro":
         PRO_USERS.add(user.id)
@@ -227,7 +264,5 @@ token = get_discord_token()
 if not token:
     raise RuntimeError("Discord token not provided")
 bot.run(token)
-=======
 bot.run(os.getenv("DISCORD_TOKEN"))
-
 
