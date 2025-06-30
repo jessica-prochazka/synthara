@@ -13,6 +13,7 @@ logger = logging.getLogger("discord_bot")
 
 TOKEN_LOG_FILE = "token_usage.txt"
 OPENAI_KEY_FILE = "openai_key.txt"
+DISCORD_TOKEN_FILE = "discord_token.txt"
 
 OWNER_ID = 1265368042146238536
 BOT_VERSION = "v1"
@@ -68,6 +69,16 @@ def get_openai_key() -> str | None:
         return key
     try:
         with open(OPENAI_KEY_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+
+def get_discord_token() -> str | None:
+    token = os.getenv("DISCORD_TOKEN")
+    if token:
+        return token
+    try:
+        with open(DISCORD_TOKEN_FILE, "r", encoding="utf-8") as f:
             return f.read().strip()
     except FileNotFoundError:
         return None
@@ -179,5 +190,8 @@ async def user_panel(interaction: discord.Interaction, action: str, user: discor
     else:
         await interaction.response.send_message("Unknown action", ephemeral=True)
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+token = get_discord_token()
+if not token:
+    raise RuntimeError("Discord token not provided")
+bot.run(token)
 
