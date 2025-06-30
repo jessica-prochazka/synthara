@@ -1,3 +1,6 @@
 openai_key.txt
 discord_token.txt
 token_usage.txt
+whitelist.json
+blacklist.json
+pro_users.json
