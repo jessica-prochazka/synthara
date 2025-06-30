@@ -58,6 +58,7 @@ class GPTBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         super().__init__(command_prefix="/", intents=intents)
+        self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self):
         await self.tree.sync()
@@ -119,6 +120,8 @@ def get_discord_token() -> str | None:
 async def chat_gpt(model_alias: str, prompt: str):
     openai.api_key = get_openai_key()
     model = API_MODEL_MAP.get(model_alias, model_alias)
+async def chat_gpt(model: str, prompt: str):
+    openai.api_key = get_openai_key()
     response = openai.ChatCompletion.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
@@ -196,6 +199,8 @@ API_MODEL_MAP = {
     "o3-pro": "gpt-4-turbo",
 }
 
+MODELS = ["gpt-3.5-turbo", "gpt-4", "o1-pro", "o3-pro"]
+
 @bot.tree.command(name="gpt", description="ChatGPT prompt")
 @app_commands.describe(prompt="Prompt", web_search="Enable web search")
 @app_commands.choices(model=[app_commands.Choice(name=m, value=m) for m in MODELS])
@@ -244,6 +249,9 @@ async def user_panel(interaction: discord.Interaction, action: str, user: discor
     elif action == "set-pro":
         PRO_USERS.add(user.id)
         save_state()
+        await interaction.response.send_message(f"{user} blacklisted")
+    elif action == "set-pro":
+        PRO_USERS.add(user.id)
         await interaction.response.send_message(f"{user} set to pro")
     elif action == "view-stats":
         d, m, t = token_usage_stats(user.id)
@@ -255,4 +263,5 @@ token = get_discord_token()
 if not token:
     raise RuntimeError("Discord token not provided")
 bot.run(token)
+bot.run(os.getenv("DISCORD_TOKEN"))
 
