@@ -66,7 +66,6 @@ class GPTBot(commands.Bot):
         save_state()
 
 load_state()
-
 bot = GPTBot()
 
 # Helper functions
@@ -199,8 +198,8 @@ API_MODEL_MAP = {
     "o3-mini-high": "gpt-3.5-turbo",
     "o3-pro": "gpt-4-turbo",
 }
-MODELS = ["gpt-3.5-turbo", "gpt-4", "o1-pro", "o3-pro"]
 
+MODELS = ["gpt-3.5-turbo", "gpt-4", "o1-pro", "o3-pro"]
 
 @bot.tree.command(name="gpt", description="ChatGPT prompt")
 @app_commands.describe(prompt="Prompt", web_search="Enable web search")
